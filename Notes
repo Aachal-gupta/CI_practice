@@ -1,0 +1,120 @@
+<!-- LOGIN SYSTEM  -->
+ make a login file
+ 1> application/views/login.php  
+ 2> make two controller  Home.php and Login.php
+
+
+ <!-- HOME Controller -->
+in home controller check user is login or not 
+  private function check_login()
+    {
+        if (!$this->session->userdata('user_id')) {
+			// $this->load->view('admin/login');
+			// redirect(base_url('login'));
+			// redirect("login");
+			echo "Redirecting to login...";
+			redirect("login");
+
+        }
+    }
+	called this function in constructor
+
+	now chack user is same company and status is active or not for that write code insid the nav 
+	public function nav()
+    {
+		$data['user_details'] = $this->My_model->select_where("login_tbl", ['login_tbl_id' => $_SESSION['user_id']]);
+        if (!isset($data['user_details'][0])) {
+            session_destroy();
+			redirect("login");
+        }
+
+        $this->load->view("admin/nav",$data);
+    }
+
+	<!-- LOGIN controller -->
+in this file make index page which redirect to the login page 
+and 
+in every page consist navbar so this function always be there so no need to write no. of times writethis code , just add in nav function 
+	public function nav()
+		{
+			$data['user_details'] = $this->My_model->select_where("login_tbl", ['login_tbl_id' => $_SESSION['user_id']]);
+			if (!isset($data['user_details'][0])) {
+				session_destroy();
+				redirect("login");
+			}
+
+			$this->load->view("admin/nav",$data);
+		}
+
+
+after form submisiion this will be run 
+
+	public function login_process() {
+			$username = $this->input->post('username');
+			$password = $this->input->post('password');
+		
+			$user = $this->My_model->validate_user($username, $password, 'login_tbl');
+		
+			// print_r($user); // ✅ Debugging: Check what $user contains
+		
+			if ($user) {
+				$this->session->set_userdata('user_id', $user['login_tbl_id']);
+				$this->session->set_userdata('username', $user['username']);
+		
+				redirect('home/index');
+			} else {
+				$this->session->set_flashdata('error', 'Invalid Username or Password');
+				redirect('login');
+			}
+		}
+
+		
+
+		// Logout function
+		public function logout() {
+			$this->session->sess_destroy();
+			redirect('home/login');
+		}
+		
+
+
+		<!-- how to include sidebar , navbar ,footer in every page  and session/authentication -->
+		 <!-- home controller -->
+		  in controller make 3 fucntion navbar, footer
+
+		public function nav()  
+		{
+			$data['user_details'] = $this->My_model->select_where("login_tbl", ['login_tbl_id' => $_SESSION['user_id']]);
+			if (!isset($data['user_details'][0])) {
+				session_destroy();
+				redirect("login");
+			}
+
+			$this->load->view("admin/nav",$data);
+		}
+
+		public function footer()
+		{
+			$this->load->view("admin/footer");
+		}
+
+		<!-- now add both function in one  -->
+		public function open_view($page, $data = [])
+		{
+			$this->nav();
+			$this->load->view("admin/" . $page, $data);
+			$this->footer();
+		}
+
+		<!-- now whene ever we need to include navbar and footer in main page  -->
+		 in the place of  $this->load>view('about'); we have to write $this->open_view('filename', $_post); $_post contain data liekthis 
+		 
+		 public function add_staff()
+		{
+			$this->open_view("add_staff");
+		}
+
+		add_staff is called by href link through
+
+		<!-- in ci do not write  <a href="<?=base_url()?>home/add_staff">About Us</a> -->  add staff is a function which is define in a controller 
+

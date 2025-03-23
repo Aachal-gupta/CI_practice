@@ -46,10 +46,10 @@ class Login extends CI_Controller
 	// 	}
 
 
-	 // Show the login page
-	 public function login() {
-        $this->load->view('admin/login');
+	public function index() {
+        $this->load->view('login'); // Make sure this path is correct
     }
+
 
 
 	public function login_process() {
@@ -67,17 +67,9 @@ class Login extends CI_Controller
 			redirect('home/index');
 		} else {
 			$this->session->set_flashdata('error', 'Invalid Username or Password');
-			redirect('login/login');
+			redirect('login');
 		}
 	}
-
-	
-	
-	
-	
-	
-	
-	
 
 	
 

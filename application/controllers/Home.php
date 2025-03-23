@@ -11,16 +11,21 @@ class Home extends CI_Controller{
 		$this->load->library('session');
 
 
-		// $this->check_login();
+		$this->check_login();
 	}
 
 
-	// private function check_login()
-    // {
-    //     if (!$this->session->userdata('admin_id')) {+
-	// 		$this->load->view('admin/login');
-    //     }
-    // }
+	private function check_login()
+    {
+        if (!$this->session->userdata('user_id')) {
+			// $this->load->view('admin/login');
+			// redirect(base_url('login'));
+			// redirect("login");
+			echo "Redirecting to login...";
+			redirect("login");
+
+        }
+    }
 
 
 	public function nav()
@@ -28,10 +33,10 @@ class Home extends CI_Controller{
 		$data['user_details'] = $this->My_model->select_where("login_tbl", ['login_tbl_id' => $_SESSION['user_id']]);
         if (!isset($data['user_details'][0])) {
             session_destroy();
-            redirect("home/login");
+			redirect("login");
         }
 
-        $this->load->view("admin/nav");
+        $this->load->view("admin/nav",$data);
     }
 
 	public function footer()
@@ -57,17 +62,11 @@ class Home extends CI_Controller{
     }
 
 
-	 public function login() {
-        $this->load->view('admin/login');  //show login page which is in admin folder
-    }
-	
-   
-
 
 	// Logout function
 	public function logout() {
 		$this->session->sess_destroy();
-		redirect('home/login');
+		redirect('login');
 	}
 
 	public function add_category()
