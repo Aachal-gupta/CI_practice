@@ -11,9 +11,9 @@ class  My_model extends CI_model{
 
 
 
-	public function validate_user($username, $password, $table) {
+	public function validate_user($email, $password, $table) {
 		
-		$where = '(username = "'.$username.'" AND password = "'.$password.'" AND status = "active")';
+		$where = '(email = "'.$email.'" AND password = "'.$password.'" AND status = "active")';
 		
 		$this->db->where($where); 
 		$query = $this->db->get($table);
@@ -25,6 +25,8 @@ class  My_model extends CI_model{
 		}
 		return false;
 	}
+
+	
 
 	 
 	

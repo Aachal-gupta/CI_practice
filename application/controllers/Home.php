@@ -1,6 +1,6 @@
 <?php
 
-class Home extends CI_Controller{
+class Home extends My_Controller{   //it inherit the My_Controller
 
 	public function __construct()
 	{
@@ -10,22 +10,12 @@ class Home extends CI_Controller{
 		$this->load->model('My_model');
 		$this->load->library('session');
 
+        $this->check_role(['admin', 'manager']); // Only admin and manager can access this page
 
-		$this->check_login();
 	}
 
 
-	private function check_login()
-    {
-        if (!$this->session->userdata('user_id')) {
-			// $this->load->view('admin/login');
-			// redirect(base_url('login'));
-			// redirect("login");
-			echo "Redirecting to login...";
-			redirect("login");
-
-        }
-    }
+	
 
 
 	public function nav()
@@ -58,6 +48,7 @@ class Home extends CI_Controller{
 // FOR REGISTRATION a New User
     public function index()
     {
+		echo "Welcome to the Admin Dashboard!";
 		$this->open_view("index");
     }
 
@@ -77,4 +68,4 @@ class Home extends CI_Controller{
 
 }
 
-?>
+

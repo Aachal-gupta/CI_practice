@@ -62,9 +62,9 @@
 						<div class="menu-title">Category</div>
 					</a>
 					<ul>
-						<li> <a href="<?=base_url()?>home/add_category"><i class="bx bx-right-arrow-alt"></i>add_Category</a>
+						<li> <a href="<?=base_url()?>admin/add_category"><i class="bx bx-right-arrow-alt"></i>Add Category</a>
 						</li>
-						<li> <a href="<?=base_url()?>home/category_list"><i class="bx bx-right-arrow-alt"></i>Category_list</a>
+						<li> <a href="<?=base_url()?>admin/category_list"><i class="bx bx-right-arrow-alt"></i>Category_list</a>
 						</li>
 						
 					</ul>

@@ -118,3 +118,56 @@ after form submisiion this will be run
 
 		<!-- in ci do not write  <a href="<?=base_url()?>home/add_staff">About Us</a> -->  add staff is a function which is define in a controller 
 
+
+
+
+_________________________________________________________________________________________________________________________________________________
+		
+<!-- Implementing Role-Based Access Control (RBAC)  in CodeIgniter 3 -->
+
+<!-- My_Controller --> Parent controller
+
+In large projects, many pages require authentication (checking if the user is logged in).
+
+Instead of repeating the same authentication code in every controller, we create a base controller (My_Controller).
+
+This parent controller will automatically check user roles and permissions.
+File Location: application/core/My_Controller.php
+
+Explanation:
+__construct()
+
+Runs automatically when the controller is called.
+
+Calls check_session() to verify if the user is logged in.
+
+check_session()
+
+If the user is not logged in, they are redirected to the login page.
+
+check_role($allowed_roles)
+
+Checks if the user’s role is in the allowed list.
+
+If the user does not have permission, it shows an error message.
+--------------------------------------------------------------------------------------------
+<!-- Auth.php  --> Authentication controller 
+ it extend CI_Controller
+ here we write login, login_process, and logout function 
+ create the session and check user role is what , accordign to this we redirect the pages
+ --------------------------------------------------------------------------------------------
+
+<!-- Admmin.php -->
+Admin extends My_Controller
+
+It inherits authentication checks from My_Controller.
+
+check_role(['admin', 'manager']) ensures only admins and managers can access this page.
+or
+$this->check_role(['admin']); // Restrict access to only admin
+
+<!-- Manager.php -->
+
+This controller allows access to manager
+
+If a non-allowed role (e.g., guest) tries to access it, they get an access denied error.

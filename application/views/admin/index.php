@@ -5,9 +5,9 @@
 		<div class="page-wrapper">
 			<div class="page-content">
 				
-					<h2>Welcome, <?php echo $this->session->userdata('username'); ?>!</h2>
+					<h2>Welcome, <?php echo $this->session->userdata('email'); ?>!</h2>
 					
-					<a class="btn btn-primary m-4" href="<?php echo base_url('home/logout'); ?>">Logout</a>	
+					<a class="btn btn-primary m-4" href="<?php echo base_url('auth/logout'); ?>">Logout</a>	
 
 				<div class="row row-cols-1 row-cols-lg-4">
 					<div class="col">
