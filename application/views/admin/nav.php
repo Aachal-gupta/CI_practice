@@ -66,6 +66,8 @@
 						</li>
 						<li> <a href="<?=base_url()?>admin/category_list"><i class="bx bx-right-arrow-alt"></i>Category_list</a>
 						</li>
+						<li> <a href="<?=base_url()?>admin/add_user"><i class="bx bx-right-arrow-alt"></i>Add User</a>
+						</li>
 						
 					</ul>
 				</li>

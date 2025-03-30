@@ -25,17 +25,17 @@ class Auth extends CI_Controller {
         if ($user)
 		{
             // Set session data
-            $this->session->set_userdata('user_id', $user[0]['user_tbl_id']);
-            $this->session->set_userdata('email', $user[0]['email']);
-            $this->session->set_userdata('role', $user[0]['role']);
+            $this->session->set_userdata('user_id', $user['user_tbl_id']);
+            $this->session->set_userdata('email', $user['email']);
+            $this->session->set_userdata('role', $user['role']);
 
             // Redirect based on role
-            if ($user[0]['role'] == 'admin') {
+            if ($user['role'] == 'admin') {
                 redirect('Admin');
-            } elseif ($user[0]['role'] == 'manager') {
+            } elseif ($user['role'] == 'manager') {
                 redirect('Manager');
             } else {
-                redirect('Auth/loginsss');
+                redirect('Auth/login');
             }
         } else {
             $this->session->set_flashdata('error', 'Invalid Email or Password');

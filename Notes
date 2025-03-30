@@ -171,3 +171,247 @@ $this->check_role(['admin']); // Restrict access to only admin
 This controller allows access to manager
 
 If a non-allowed role (e.g., guest) tries to access it, they get an access denied error.
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+<!-- FORM VALIDATION IN CI3 -->
+$this->load->library('form_validation');
+			OR
+	<!-- application/config/autoload.php: -->
+$autoload['libraries'] = array('form_validation');
+
+$this->form_validation->set_rules('email', 'Email', 'required|valid_email');
+$this->form_validation->set_rules('password', 'Password', 'required|min_length[5]');
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+<!-- Storing Data in Session -->
+
+$this->load->library('session');
+			<!-- OR -->
+$autoload['libraries'] = array('session');
+
+$this->session->set_userdata('key','value');
+for example
+$this->session->set_userdata('username', $username);
+$this->session->set_userdata('useremail', $email);
+
+		<!-- Or store an array: -->
+$session_data(
+	'user_id' => $Id,
+	'username' => $name,
+	'UserEmail' => $email
+);
+$this->session->set_userdata($session_data);
+
+<!-- Retrieving Session Data -->
+$user_id = $this->session->userdata('user_id');
+$userName = $this->session->userdata('username');
+$userEmail = $this->session->userdata('useremail');
+
+echo "User ID: " . $user_id;
+echo "Email: " . $userEmail;
+echo "Role: " . $userName;
+
+<!-- Destroying the Session (Logout) -->
+$this->session->sess_destroy();
+redirect('auth/login');
+
+<!-- Implementing Session in Login -->
+public function validate_login() {
+    $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
+    $this->form_validation->set_rules('password', 'Password', 'required|min_length[5]');
+
+    if ($this->form_validation->run() == FALSE) {
+        $this->load->view('auth/login');
+    } else {
+        // Fetch user from database
+        $user = $this->db->get_where('users', ['email' => $this->input->post('email')])->row_array();
+
+        if ($user && $user['password'] == $this->input->post('password')) {
+            // Set session
+            $session_data = array(
+                'user_id' => $user['user_tbl_id'],
+                'email' => $user['email'],
+                'role' => $user['role']
+            );
+            $this->session->set_userdata($session_data);
+
+            redirect('admin/index'); // Redirect to dashboard
+        } else {
+            $this->session->set_flashdata('error', 'Invalid Email or Password');
+            redirect('auth/login');
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+<!-- FILE UPLOADS -->
+CodeIgniter provides a built-in File Uploading Class to handle file uploads easily.
+$this->load->library('upload'); 
+<!-- OR ADD IN Autoload.php file  -->
+$autoload['libraries'] = array('upload');
+
+
+<!-- in controller  -->
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class Upload extends CI_Controller {
+
+    public function __construct() {
+        parent::__construct();
+        $this->load->library('upload');
+    }
+
+    public function index() {
+        $this->load->view('upload_form');
+    }
+
+    public function do_upload() {
+        // Configuration for file upload
+        $config['upload_path']   = './uploads/'; // Folder where files will be uploaded
+        $config['allowed_types'] = 'jpg|png|gif|pdf|docx'; // Allowed file types
+        $config['max_size']      = 2048; // File size limit (2MB)
+        $config['encrypt_name']  = TRUE; // Encrypt file name to prevent overwriting
+
+        $this->upload->initialize($config);
+
+        if (!$this->upload->do_upload('userfile')) {
+            // Upload failed
+            $error = array('error' => $this->upload->display_errors());
+            $this->load->view('upload_form', $error);
+        } else {
+            // Upload success
+            $data = array('upload_data' => $this->upload->data());
+            $this->load->view('upload_success', $data);
+        }
+    }
+}
+?>
+
+upload_path: Defines the folder where files will be stored.
+
+allowed_types: Limits the file types (JPG, PNG, GIF, PDF, DOCX).
+
+max_size: Restricts file size (in KB).
+
+encrypt_name: Renames files to prevent conflicts.
+
+<!-- Handling Multiple File Uploads -->
+public function multiple_upload() {
+    $config['upload_path']   = './uploads/';
+    $config['allowed_types'] = 'jpg|png|gif|pdf|docx';
+    $config['max_size']      = 2048;
+    $config['encrypt_name']  = TRUE;
+
+    $this->load->library('upload', $config);
+
+    $files = $_FILES;
+    $count = count($_FILES['userfiles']['name']); // Count total files
+
+    for ($i = 0; $i < $count; $i++) {
+        $_FILES['userfile']['name']     = $files['userfiles']['name'][$i];
+        $_FILES['userfile']['type']     = $files['userfiles']['type'][$i];
+        $_FILES['userfile']['tmp_name'] = $files['userfiles']['tmp_name'][$i];
+        $_FILES['userfile']['error']    = $files['userfiles']['error'][$i];
+        $_FILES['userfile']['size']     = $files['userfiles']['size'][$i];
+
+        $this->upload->initialize($config);
+
+        if ($this->upload->do_upload('userfile')) {
+            $data['uploads'][] = $this->upload->data();
+        }
+    }
+
+    $this->load->view('upload_success', $data);
+}
+<form action="<?php echo base_url('upload/multiple_upload'); ?>" method="post" enctype="multipart/form-data">
+    <input type="file" name="userfiles[]" multiple />
+    <br><br>
+    <input type="submit" value="Upload">
+</form>
+
+
+<!--  Deleting Uploaded Files -->
+public function delete_file($filename) {
+    $file_path = './uploads/' . $filename;
+    if (file_exists($file_path)) {
+        unlink($file_path);
+        echo "File deleted successfully.";
+    } else {
+        echo "File not found.";
+    }
+}
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+	***********************	 FILE UPLOAD IN PRACTICAL WAY  ***********************
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+File Upload in the Form
+<form action="<?= base_url('admin/insert_user'); ?>" method="POST" enctype="multipart/form-data">
+    <input type="text" name="name" placeholder="Enter Name" required>
+    <input type="email" name="email" placeholder="Enter Email" required>
+    <input type="file" name="upload_file"> <!-- File input -->
+    <button type="submit">Submit</button>
+</form>
+
+<!-- The enctype="multipart/form-data" is important for file uploads.
+
+The file input field name is upload_file, which is used in PHP to retrieve the file. -->
+
+Retrieving the Uploaded File in the Controller
+<!-- When the form is submitted, it reaches the insert_user() function in the Admin controller: -->
+	$image_data = $_FILES['upload_file']['name'];
+$tmp = $_FILES['upload_file']['tmp_name'];
+$image_name = $this->upload_img($image_data, $tmp); // Upload and get filename
+
+<!-- Moving the File to the Uploads Folder -->
+function upload_img($imgname, $imgtemp, $path = "uploads/")
+{
+    if ($imgname != "") {
+        // Generate a unique file name
+        $fname = time() . rand(00000000, 99999999) . "." . pathinfo($imgname, PATHINFO_EXTENSION);
+        $path1 = $path . $fname;
+
+        // Move the uploaded file to the designated folder
+        move_uploaded_file($imgtemp, $path1);
+
+        return $fname; // Return the new filename for database storage
+    } else {
+        return null; // No file uploaded
+    }
+}
+
+It generates a unique filename using time() + rand().
+
+move_uploaded_file($imgtemp, $path1) moves the file from temp storage to the uploads/ folder.
+
+The function returns the saved filename (e.g., 171173934312345678.jpg).
+
+<!-- Storing the File Name in the Database -->
+$data = [
+    'name' => $this->input->post('name'),
+    'email' => $this->input->post('email'),
+    'image' => $image_name  // Store only the filename in the database
+];
+
+$this->My_model->insert_data('form', $data);
+
+<!-- Retrieving and Displaying the Image -->
+<img src="<?= base_url('uploads/' . $user->image); ?>" alt="User Image">
+
+
+
+
+Form Validation in CodeIgniter
+
+Session Handling
+
+File Uploading
+
+Ajax with CodeIgniter
+
+Authentication & Middleware (Login System with Role-Based Access Control)
+
+CodeIgniter 4 Routing & Middleware
