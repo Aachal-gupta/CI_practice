@@ -1,3 +1,4 @@
+
 <!-- Show validation errors -->
 <?php echo validation_errors('<p style="color: red;">', '</p>'); ?>
 
@@ -23,19 +24,40 @@
 						<input type="email" class="form-control" name="email" value="<?= $edit_user['email'] ?>" required>
 					</div>
 
-					<div class="col-mb-6">
+					<!-- for single file upload  -->
+					<!-- <div class="col-mb-6">
 						<label for="image">Current Image</label><br>
 						<?php if (!empty($edit_user['image'])): ?>
 							<img src="<?= base_url('uploads/' . $edit_user['image']); ?>" alt="User Image" width="100">
 						<?php else: ?>
 							<p>No Image Available</p>
 						<?php endif; ?>
+					</div> -->
+
+					
+					<!-- for multiple file upload -->
+					<div class="col-mb-6">
+						<label for="image">Current Image</label><br>
+						<?php 
+						$images = json_decode($edit_user['image'], true); // Decode JSON if multiple images
+						if (is_array($images)) {
+							foreach ($images as $img) {
+								echo '<img src="' . base_url('uploads/' . $img) . '" width="100px" height="90px" alt="User Image" style="margin:5px;">';
+							}
+						} elseif (!empty($edit_user['image'])) { 
+							// If only a single image is stored as a string
+							echo '<img src="' . base_url('uploads/' . $edit_user['image']) . '" width="100px" height="90px" alt="User Image">';
+						} else {
+							echo '<p>No Image Available</p>';
+						}
+						?>
 					</div>
 
 					<div class="col-mb-6">
-						<label for="image">File Upload </label>
-						<input type="file" class="form-control" name="upload_file">
+						<label for="image">Upload New Images</label>
+						<input type="file" class="form-control" name="upload_file[]" multiple> <!-- Allow multiple file selection -->
 					</div>
+
 
 
 					<div class="text-center">

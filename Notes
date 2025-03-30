@@ -403,15 +403,282 @@ $this->My_model->insert_data('form', $data);
 
 
 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+							add multiple file upload
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[1] <!-- Add image input box name will be array form -->
+<input type="file" class="form-control" name="upload_file[]" multiple>
 
-Form Validation in CodeIgniter
+[2]  <!-- on insert function put images   -->
+	$uploaded_files = [];
+	if (!empty($_FILES['upload_file']['name'][0])) {
+		$uploaded_files = $this->upload_img($_FILES['upload_file']['name'], $_FILES['upload_file']['tmp_name']);
+	}
 
-Session Handling
+	// **Convert array to JSON before storing**
+	$image_name = json_encode($uploaded_files);
 
-File Uploading
+		$data = [
+			'name' => $this->input->post('name'),
+			'email' => $this->input->post('email'),
+			'image' => $image_name 
+		];
 
-Ajax with CodeIgniter
+		$this->My_model->insert_data('form', $data);
 
-Authentication & Middleware (Login System with Role-Based Access Control)
+[3]  <!-- make upload_img function properly  -->
+	function upload_img($imgname, $imgtemp, $path = "uploads/") {
+			if (!empty($imgname)) {
+				// Generate unique filename
+				$fname = time() . rand(00000000, 99999999) . "." . pathinfo($imgname, PATHINFO_EXTENSION);
+				$path1 = $path . $fname;
+		
+				// Move the uploaded file to the designated path
+				move_uploaded_file($imgtemp, $path1);
+		
+				return $fname; // Return filename for database storage
+			}
+			return null; // Return null if no file is uploaded
+	}
 
-CodeIgniter 4 Routing & Middleware
+	<!-- pathinfo($imgname, PATHINFO_EXTENSION) is a PHP function that extracts the file extension from a given file name.
+		We use it to get the file extension (like jpg, png, pdf, etc.) from an uploaded file name. This helps in:
+
+	Ensuring proper file type validation
+
+	Generating unique file names when saving uploads
+
+	Preventing security risks (like executing harmful scripts)
+	It works even if the file has multiple dots, like my.file.name.png, whereas explode() can fail in such cases. -->
+
+
+
+[4] <!--To show all imgaes in table in one box   -->
+
+<td>
+	<?php
+	$images = json_decode($user['image'], true); //store as a json
+	if(is_array($images))
+	{
+		foreach($images as $img){
+			echo '<img src="' . base_url('uploads/' . $img). '"      height="100px" width="90px" alt="images" >';
+		}
+	}elseif(!empty($user['image'])){
+		// If only a single image is stored as a string, show it directly
+		echo '<img src="' . base_url('uploads/' . $user['image']) . '" width="100px" height="90px" alt="User Image">';
+	} else {
+			echo '<p>No Image Available</p>';
+		}
+	
+	?>
+</td>
+
+
+[5] <!-- edit images  in view file -->
+
+					<div class="col-mb-6">
+						<label for="image">Current Image</label><br>
+						<?php 
+						$images = json_decode($edit_user['image'], true); // Decode JSON if multiple images
+						if (is_array($images)) {
+							foreach ($images as $img) {
+								echo '<img src="' . base_url('uploads/' . $img) . '" width="100px" height="90px" alt="User Image" style="margin:5px;">';
+							}
+						} elseif (!empty($edit_user['image'])) { 
+							// If only a single image is stored as a string
+							echo '<img src="' . base_url('uploads/' . $edit_user['image']) . '" width="100px" height="90px" alt="User Image">';
+						} else {
+							echo '<p>No Image Available</p>';
+						}
+						?>
+					</div>
+
+[6] <!--update   -->
+public function update_user() {
+    $table_id = $this->input->post('table_id');
+
+    $this->form_validation->set_rules('name', 'Name', 'required|min_length[3]');
+    $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
+
+    if ($this->form_validation->run() == FALSE) {
+        $this->edit_user($table_id); // Reload edit page with validation errors
+    } else {
+        // Retrieve the existing user data
+        $user = $this->My_model->select_where('form', ['table_id' => $table_id]);
+
+        // Delete old images if new images are uploaded
+        if (!empty($_FILES['upload_file']['name'][0])) { // Check if any file is selected
+            $old_images = json_decode($user['image'], true);
+
+            if (is_array($old_images)) {
+                foreach ($old_images as $old_img) {
+                    $old_img_path = 'uploads/' . $old_img;
+                    if (file_exists($old_img_path)) {
+                        unlink($old_img_path); // Delete old image from folder
+                    }
+                }
+            } elseif (!empty($user['image'])) { // If it's a single image (not JSON array)
+                $old_img_path = 'uploads/' . $user['image'];
+                if (file_exists($old_img_path)) {
+                    unlink($old_img_path); // Delete old image from folder
+                }
+            }
+        }
+
+        // Upload new images
+        $uploaded_images = [];
+        if (!empty($_FILES['upload_file']['name'][0])) {
+            foreach ($_FILES['upload_file']['name'] as $key => $img_name) {
+                $img_temp = $_FILES['upload_file']['tmp_name'][$key];
+                $uploaded_images[] = $this->upload_img($img_name, $img_temp);
+            }
+        }
+
+        // Use new images if uploaded, otherwise keep old images
+        $final_images = !empty($uploaded_images) ? $uploaded_images : json_decode($user['image'], true);
+
+        // Prepare data for update
+        $data = [
+            'name' => $this->input->post('name'),
+            'email' => $this->input->post('email'),
+            'image' => json_encode($final_images)
+        ];
+
+        // Update database
+        $this->My_model->update_data('form', $data, ['table_id' => $table_id]);
+        $this->session->set_flashdata('success', 'User updated successfully!');
+        redirect('admin/user_list');
+    }
+}
+										
+
+---------------------------------------------------------------------------------------------------------------------------------------- 
+		AJAX (Asynchronous JavaScript and XML)
+-----------------------------------------------------------------------------------------------------------------------------------------
+AJAX (Asynchronous JavaScript and XML) is a technique that allows web pages to communicate with the server without reloading the page.
+
+AJAX works by using JavaScript to send and receive data from the server in the background, while the user continues to interact with the page.
+
+ Steps of AJAX Working:
+A user triggers an event (e.g., clicking a button or submitting a form).
+
+JavaScript creates an AJAX request to the server.
+
+The server processes the request (e.g., inserts data into a database).
+
+The server responds with data (JSON, HTML, or text).
+
+JavaScript updates the webpage without refreshing.
+✅ Faster Performance 
+✅ Better User Experience 
+✅ Less Server Load 
+✅ Seamless Updates 
+
+<button id="loadData">Load Data</button>
+<div id="result"></div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $("#loadData").click(function() {
+            $.ajax({
+				url: "<?= base_url('user/fetch_users'); ?>", // AJAX URL
+                type: "GET",
+                success: function(response) {
+                    $("#result").html(response); // Update HTML dynamically
+                }
+            });
+        });
+    });
+</script>
+
+-----------------------------------------------ROUT---------------------------------------------------------------------------------------------------------------
+
+🔹 1. What is Routing in CodeIgniter 4?
+Routing in CodeIgniter 4 is used to map URLs to specific controllers and methods. It helps define custom URLs instead of relying on default controller/method naming conventions.
+
+📌 Types of Routing in CodeIgniter 4:
+
+Default Routing → Routes to the default controller.  $routes->get('/', 'Home::index'); // Calls Home controller index() method
+
+
+Custom Routing → Manually define a specific URL pattern.  like this  $routes->get('about', 'Pages::about'); // example.com/about
+$routes->get('contact', 'Pages::contact'); // example.com/contact
+
+
+Dynamic Routing → Use parameters in URLs.  $routes->get('user/(:num)', 'UserController::profile/$1'); 
+// example.com/user/5 → Calls UserController's profile(5)
+📌 (:num) → Matches numbers only.
+📌 (:any) → Matches any string or number.
+
+
+RESTful Routing → Create API routes for GET, POST, PUT, DELETE requests. $routes->resource('users'); // Creates RESTful routes for UserController
+This automatically generates API endpoints like:
+
+GET /users → Fetch all users
+
+POST /users → Create a new user
+
+GET /users/1 → Fetch user with ID 1
+
+PUT /users/1 → Update user with ID 1
+
+DELETE /users/1 → Delete user with ID 1
+
+---------------------------------------------------------------------------------------------------------------------------------------------
+						MIDDLEWARE
+						
+🚫 CodeIgniter 3 does NOT have built-in middleware.
+✅ Instead, we use Hooks for middleware-like behavior.
+
+📍 Location: application/config/hooks.php
+
+Yes! Instead of using Hooks in CodeIgniter 3, you can create a custom base controller (My_Controller) 
+in the core directory and implement role-based access control (RBAC) directly.
+ This is a better approach because it keeps authentication logic centralized and avoids the need for additional hook configurations.
+
+ ✔ No Need for Hooks – Everything is managed inside My_Controller.
+✔ Cleaner Code – No need to check login in every controller manually.
+✔ Centralized Role Management – Easily restrict access based on roles.
+
+🚀 This is the best way to implement authentication and role-based access in CodeIgniter 3
+
+
+<!-- HOOKS  -->
+A hook in CodeIgniter 3 is a way to execute custom code before, after, or during the execution of a request without modifying core 
+files. Hooks allow you to extend the framework’s functionality in a structured way.
+---------------------------------------------------------------------------------------------------------------------------------------------------
+						HMVC  (Hierarchical Model-View-Controller)
+--------------------------------------------------------------------------------------------------------------------------------------------------- 
+🧐 What is HMVC?
+HMVC (Hierarchical Model-View-Controller) is an advanced version of the MVC architecture.
+It allows modular development, meaning you can split large projects into smaller independent modules.
+1️⃣ Code Reusability – You can reuse modules in different projects.
+2️⃣ Better Organization – Each module has its own controllers, models, and views.
+3️⃣ Easy Maintenance – Each module functions independently.
+4️⃣ Faster Development – You can work on different modules simultaneously.
+
+By default, CodeIgniter 3 does not support HMVC. We need to install a third-party HMVC extension.
+Extract the downloaded zip file and copy these folders into your CodeIgniter application/ folder:
+
+core → Paste inside application/
+
+third_party → Paste inside application/
+$config['modules_locations'] = array(APPPATH.'modules/' => '../modules/');
+Create a Sample Module (Users Module)
+application/
+│── modules/
+│   ├── users/
+│   │   ├── controllers/
+│   │   │   ├── Users.php
+│   │   ├── models/
+│   │   │   ├── Users_model.php
+│   │   ├── views/
+│   │   │   ├── users_list.php
+
+
+in this  controller we extend MX_Controller 
+class Users extends MX_Controller 
+✅ MX_Controller is part of the HMVC extension in CodeIgniter 3.
+✅ It extends CI_Controller and allows module-based development.
+✅ Using MX_Controller, you can load models, views, and controllers across different modules.

@@ -22,7 +22,10 @@
 
 					<div class="col-md-6">
 						<label for="fiel">Upload File</label>
-						<input type="file" class="form-control" name="upload_file" required>
+						<!-- <input type="file" class="form-control" name="upload_file" required> -->
+						 <!-- for multiple file upload -->
+						 <input type="file" class="form-control" name="upload_file[]" multiple>
+
 					</div>
 
 					<div class="text-center p-3">

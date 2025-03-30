@@ -12,6 +12,7 @@ class Admin extends My_Controller {
 		$this->load->library('upload'); //for upload file
 		$config['upload_path']   = './uploads/'; // Folder where files will be uploaded
         $config['allowed_types'] = 'jpg|png|gif|pdf|docx';
+		$this->load->library('pagination'); 
     }
 
 	public function nav()
@@ -96,108 +97,265 @@ class Admin extends My_Controller {
 		$this->open_view("add_user");
 	}
 
-	function upload_img($imgname, $imgtemp, $path = "uploads/")
-{
-    if ($imgname != "") {
-        // Generate a unique file name
-        $fname = time() . rand(00000000, 99999999) . "." . explode(".", $imgname)[count(explode(".", $imgname)) - 1];
-        $path1 = $path . $fname;
+	// function upload_img($imgname, $imgtemp, $path = "uploads/")
+	// {
+	// 	if ($imgname != "") {
+	// 		// Generate a unique file name
+	// 		$fname = time() . rand(00000000, 99999999) . "." . explode(".", $imgname)[count(explode(".", $imgname)) - 1];
+	// 		$path1 = $path . $fname;
 
-        // Move the uploaded file to the designated path
-        move_uploaded_file($imgtemp, $path1);
+	// 		// Move the uploaded file to the designated path
+	// 		move_uploaded_file($imgtemp, $path1);
 
-        return $fname; // Return the file name for database storage
-    } else {
-        return $imgname;
-    }
-}
+	// 		return $fname; // Return the file name for database storage
+	// 	} else {
+	// 		return $imgname;
+	// 	}
+	// }
+
+	function upload_img($imgname, $imgtemp, $path = "uploads/") {
+		if (!empty($imgname)) {
+			// Generate unique filename
+			$fname = time() . rand(00000000, 99999999) . "." . pathinfo($imgname, PATHINFO_EXTENSION);
+			$path1 = $path . $fname;
+	
+			// Move the uploaded file to the designated path
+			move_uploaded_file($imgtemp, $path1);
+	
+			return $fname; // Return filename for database storage
+		}
+		return null; // Return null if no file is uploaded
+	}
+	
+	
+
 
 
 	//form
+	// public function insert_user() {
+
+	// 	$this->form_validation->set_rules('name', 'Name', 'required|min_length[3]');
+	// 	$this->form_validation->set_rules('email', 'Email', 'required|valid_email|is_unique[form.email]');
+
+	
+	// 	if ($this->form_validation->run() == FALSE) {
+	// 		$this->load->view('add_user'); // Show form again if validation fails
+	// 	} else {
+
+	// 		//  // Handle  single file upload
+	// 		//  $image_data = $_FILES['upload_file']['name'];
+	// 		//  $tmp = $_FILES['upload_file']['tmp_name'];
+	// 		//  $image_name = $this->upload_img($image_data, $tmp); // Call upload function
+
+	// 		// for multiple file upload 
+	// 		$uploaded_files = [];
+
+    //     if (!empty($_FILES['upload_file']['name'][0])) {
+    //         $uploaded_files = $this->upload_img($_FILES['upload_file']['name'], $_FILES['upload_file']['tmp_name']);
+    //     }
+
+    //     // **Convert array to JSON before storing**
+    //     $image_name = json_encode($uploaded_files);
+
+	// 		$data = [
+	// 			'name' => $this->input->post('name'),
+	// 			'email' => $this->input->post('email'),
+	// 			'image' => $image_name 
+	// 		];
+	
+	// 		$this->My_model->insert_data('form', $data);
+	// 		$this->session->set_flashdata('success', 'User added successfully!');
+	// 		redirect('admin/user_list');
+	// 	}
+	// }
+
+
 	public function insert_user() {
 		$this->form_validation->set_rules('name', 'Name', 'required|min_length[3]');
 		$this->form_validation->set_rules('email', 'Email', 'required|valid_email|is_unique[form.email]');
-
 	
 		if ($this->form_validation->run() == FALSE) {
 			$this->load->view('add_user'); // Show form again if validation fails
 		} else {
-
-			 // Handle file upload
-			 $image_data = $_FILES['upload_file']['name'];
-			 $tmp = $_FILES['upload_file']['tmp_name'];
-			 $image_name = $this->upload_img($image_data, $tmp); // Call upload function
-
+			$uploaded_files = [];
+	
+			if (!empty($_FILES['upload_file']['name'][0])) {
+				foreach ($_FILES['upload_file']['name'] as $key => $img_name) {
+					$img_temp = $_FILES['upload_file']['tmp_name'][$key];
+					$uploaded_files[] = $this->upload_img($img_name, $img_temp);
+				}
+			}
+	
+			// **Ensure correct JSON format**
+			$image_name = !empty($uploaded_files) ? json_encode($uploaded_files) : json_encode([]);
+	
+			// Prepare data for insertion
 			$data = [
 				'name' => $this->input->post('name'),
 				'email' => $this->input->post('email'),
-				'image' => $image_name 
+				'image' => $image_name
 			];
-
-			
+	
+			// Insert data into the database
 			$this->My_model->insert_data('form', $data);
 			$this->session->set_flashdata('success', 'User added successfully!');
 			redirect('admin/user_list');
 		}
 	}
 
-		public function user_list() {
-		    $data['users'] = $this->My_model->get_all('form');
-		    // $this->load->view('user_listt', $data);
-			$this->open_view('user_list',$data);
-		}
+	
 
+		// public function user_list() {
+		//     $data['users'] = $this->My_model->get_all('form');
+		// 	$this->open_view('user_list',$data);
+		// }
+
+		public function user_list() {
+			$config = [
+				'base_url' => base_url('admin/user_list'),
+				'total_rows' => $this->My_model->count_all('form'), // Get total number of users
+				'per_page' => 5, // Display 5 users per page
+				'uri_segment' => 3,
+				'full_tag_open' => '<nav><ul class="pagination">',
+				'full_tag_close' => '</ul></nav>',
+				'first_tag_open' => '<li class="page-item"><span class="page-link">',
+				'first_tag_close' => '</span></li>',
+				'last_tag_open' => '<li class="page-item"><span class="page-link">',
+				'last_tag_close' => '</span></li>',
+				'next_tag_open' => '<li class="page-item"><span class="page-link">',
+				'next_tag_close' => '</span></li>',
+				'prev_tag_open' => '<li class="page-item"><span class="page-link">',
+				'prev_tag_close' => '</span></li>',
+				'cur_tag_open' => '<li class="page-item active"><span class="page-link">',
+				'cur_tag_close' => '</span></li>',
+				'num_tag_open' => '<li class="page-item"><span class="page-link">',
+				'num_tag_close' => '</span></li>',
+			];
+		
+			$this->pagination->initialize($config);
+			$page = ($this->uri->segment(3)) ? $this->uri->segment(3) : 0;
+		
+			$data['users'] = $this->My_model->get_paginated_users('form', $config['per_page'], $page);
+			$data['pagination_links'] = $this->pagination->create_links();
+		
+			$this->open_view('user_list', $data);
+		}
+		
 		public function edit_user($table_id){
 			$data['edit_user'] = $this->My_model->select_where('form', ['table_id' => $table_id]);
 			$this->open_view('edit_user', $data);
 		}
 
 
-
-	public function update_user() {
-		$table_id = $this->input->post('table_id');
+// for single file upload
+	// public function update_user() {
+	// 	$table_id = $this->input->post('table_id');
 	
-		$this->form_validation->set_rules('name', 'Name', 'required|min_length[3]');
-		$this->form_validation->set_rules('email', 'Email', 'required|valid_email');
+	// 	$this->form_validation->set_rules('name', 'Name', 'required|min_length[3]');
+	// 	$this->form_validation->set_rules('email', 'Email', 'required|valid_email');
 	
-		if ($this->form_validation->run() == FALSE) {
-			$this->edit_user($table_id); // Reload edit page with validation errors
-		} else {
-			// Retrieve the existing user data
-			$user = $this->My_model->select_where('form', ['table_id' => $table_id]);
+	// 	if ($this->form_validation->run() == FALSE) {
+	// 		$this->edit_user($table_id); // Reload edit page with validation errors
+	// 	} else {
+	// 		// Retrieve the existing user data
+	// 		$user = $this->My_model->select_where('form', ['table_id' => $table_id]);
 			
 	
-			// Handle file upload only if a new file is selected
-			if ($_FILES['upload_file']['name'] != "") {
-				$image_data = $_FILES['upload_file']['name'];
-				$tmp = $_FILES['upload_file']['tmp_name'];
-				$image_name = $this->upload_img($image_data, $tmp);
+	// 		// Handle file upload only if a new file is selected
+	// 		if ($_FILES['upload_file']['name'] != "") {
+	// 			$image_data = $_FILES['upload_file']['name'];
+	// 			$tmp = $_FILES['upload_file']['tmp_name'];
+	// 			$image_name = $this->upload_img($image_data, $tmp);
 				
 	
-				// Delete old image if exists
-				if (!empty($user['image']) && file_exists(FCPATH . 'uploads/' . $user['image'])) {
-					unlink(FCPATH . 'uploads/' . $user['image']); // Delete the old image
-				}
-			} else {
-				$image_name = $user['image']; // Keep the old image if no new image is uploaded
-				print_r($image_name);
+	// 			// Delete old image if exists
+	// 			if (!empty($user['image']) && file_exists(FCPATH . 'uploads/' . $user['image'])) {
+	// 				unlink(FCPATH . 'uploads/' . $user['image']); // Delete the old image
+	// 			}
+	// 		} else {
+	// 			$image_name = $user['image']; // Keep the old image if no new image is uploaded
+	// 			print_r($image_name);
 				
 	
-			}
+	// 		}
 	
-			// Prepare data for update
-			$data = [
-				'name' => $this->input->post('name'),
-				'email' => $this->input->post('email'),
-				'image' => $image_name // Store the image filename in the database
-			];
+	// 		// Prepare data for update
+	// 		$data = [
+	// 			'name' => $this->input->post('name'),
+	// 			'email' => $this->input->post('email'),
+	// 			'image' => $image_name // Store the image filename in the database
+	// 		];
 	
-			// Update database
-			$this->My_model->update_data('form', $data, ['table_id' => $table_id]);
-			$this->session->set_flashdata('success', 'User updated successfully!');
-			redirect('admin/user_list');
-		}
-	}
+	// 		// Update database
+	// 		$this->My_model->update_data('form', $data, ['table_id' => $table_id]);
+	// 		$this->session->set_flashdata('success', 'User updated successfully!');
+	// 		redirect('admin/user_list');
+	// 	}
+	// }
+
+
+// for multiple file upload
+public function update_user() {
+    $table_id = $this->input->post('table_id');
+
+    $this->form_validation->set_rules('name', 'Name', 'required|min_length[3]');
+    $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
+
+    if ($this->form_validation->run() == FALSE) {
+        $this->edit_user($table_id); // Reload edit page with validation errors
+    } else {
+        // Retrieve the existing user data
+        $user = $this->My_model->select_where('form', ['table_id' => $table_id]);
+
+        // Delete old images if new images are uploaded
+        if (!empty($_FILES['upload_file']['name'][0])) { // Check if any file is selected
+            $old_images = json_decode($user['image'], true);
+
+            if (is_array($old_images)) {
+                foreach ($old_images as $old_img) {
+                    $old_img_path = 'uploads/' . $old_img;
+                    if (file_exists($old_img_path)) {
+                        unlink($old_img_path); // Delete old image from folder
+                    }
+                }
+            } elseif (!empty($user['image'])) { // If it's a single image (not JSON array)
+                $old_img_path = 'uploads/' . $user['image'];
+                if (file_exists($old_img_path)) {
+                    unlink($old_img_path); // Delete old image from folder
+                }
+            }
+        }
+
+        // Upload new images
+        $uploaded_images = [];
+        if (!empty($_FILES['upload_file']['name'][0])) {
+            foreach ($_FILES['upload_file']['name'] as $key => $img_name) {
+                $img_temp = $_FILES['upload_file']['tmp_name'][$key];
+                $uploaded_images[] = $this->upload_img($img_name, $img_temp);
+            }
+        }
+
+        // Use new images if uploaded, otherwise keep old images
+        $final_images = !empty($uploaded_images) ? $uploaded_images : json_decode($user['image'], true);
+
+        // Prepare data for update
+        $data = [
+            'name' => $this->input->post('name'),
+            'email' => $this->input->post('email'),
+            'image' => json_encode($final_images)
+        ];
+
+        // Update database
+        $this->My_model->update_data('form', $data, ['table_id' => $table_id]);
+        $this->session->set_flashdata('success', 'User updated successfully!');
+        redirect('admin/user_list');
+    }
+}
+
+
+
+
+
 	
 
 	public function delete_user($id) {

@@ -54,5 +54,17 @@ class  My_model extends CI_model{
         return $this->db->where($t_id, $id)->delete($table);
     }
 
+
+	public function count_all($table) {
+		return $this->db->count_all($table);
+	}
+	
+	public function get_paginated_users($table, $limit, $offset) {
+		$this->db->limit($limit, $offset);
+		$query = $this->db->get($table);
+		return $query->result_array();
+	}
+	
+
 }
 ?>
