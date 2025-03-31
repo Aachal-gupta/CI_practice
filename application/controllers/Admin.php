@@ -34,6 +34,43 @@ class Admin extends My_Controller {
         $this->footer();
     }
 
+
+	private function send_email($to_email, $user_name) {
+		$this->load->library('email'); // Load Email Library
+	
+		// Email Configuration
+		$config = array(
+			'protocol'  => 'smtp',
+			'smtp_host' => 'smtp.gmail.com',
+			'smtp_port' => 587,
+			'smtp_user' => 'aachal.gupta@ratsantech.in', // Your email
+			'smtp_pass' => 'ozao luoz ptsk qunm', // Use App Password (NOT your real password)
+			'mailtype'  => 'html',
+			'charset'   => 'utf-8',
+			'newline'   => "\r\n",
+			'smtp_crypto' => 'tls'
+		);
+	
+		$this->email->initialize($config);
+	
+		// Email Content
+		$this->email->from('aachal.gupta@ratsantech.in', 'Your Company Name');
+		$this->email->to($to_email);
+		$this->email->subject('Welcome to Our Platform');
+		$this->email->message('<h2>Hello ' . $user_name . ',</h2><p>Thank you for registering with us.</p>');
+	
+		if ($this->email->send()) {
+			return true;
+		} else {
+			echo $this->email->print_debugger(); // Show errors if email fails
+		}
+	}
+	
+	
+	
+	
+
+	
 												// CRUD OPERATION
 	// ----------------------------------------------------------------------------------------------------------------------------------
 
@@ -198,6 +235,10 @@ class Admin extends My_Controller {
 	
 			// Insert data into the database
 			$this->My_model->insert_data('form', $data);
+
+			 // Send Email Notification
+			 $this->send_email($data['email'], $data['name']);
+
 			$this->session->set_flashdata('success', 'User added successfully!');
 			redirect('admin/user_list');
 		}
